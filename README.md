@@ -433,6 +433,33 @@ launchctl stop com.ptt-ntfy
 
 ---
 
+## 測試
+
+專案包含完整的測試套件，方便驗證功能和進行開發。
+
+### 執行所有測試
+
+```bash
+python tests/run_all_tests.py
+```
+
+### 個別測試
+
+| 測試 | 指令 | 說明 |
+|------|------|------|
+| PTT 爬蟲 | `python tests/test_crawler.py` | 測試爬蟲連線與解析 |
+| 資料庫 | `python tests/test_database.py` | 測試 SQLite 讀寫 |
+| Telegram | `python tests/test_telegram.py` | 測試 Bot 連線 |
+| 多語言訊息 | `python tests/test_messages.py` | 測試各種語言顯示 |
+
+### 環境檢查
+
+```bash
+python check_env.py
+```
+
+---
+
 ## License
 
 MIT License

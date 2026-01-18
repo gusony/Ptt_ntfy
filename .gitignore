@@ -29,7 +29,3 @@ logs/
 # OS
 .DS_Store
 Thumbs.db
-
-# Test files
-test_msg.py
-test_telegram.py
