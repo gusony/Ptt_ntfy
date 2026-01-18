@@ -6,6 +6,26 @@
 
 ---
 
+## 🚀 一鍵設定（推薦新手）
+
+```bash
+# 1. Clone 專案
+git clone https://github.com/gusony/Ptt_ntfy.git
+cd Ptt_ntfy
+
+# 2. 執行設定精靈（會引導你完成所有步驟）
+python setup.py
+```
+
+設定精靈會引導你：
+- ✅ 檢查並安裝依賴套件
+- ✅ 建立 Telegram Bot（附詳細教學）
+- ✅ 設定 Chat ID（可自動偵測）
+- ✅ 測試連線
+- ✅ 啟動程式
+
+---
+
 ## 目錄
 
 - [功能特色](#功能特色)
