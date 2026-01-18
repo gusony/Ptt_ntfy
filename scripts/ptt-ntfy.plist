@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+PTT 爬蟲通知程式 - macOS launchd 設定檔
+
+使用方式：
+  1. 修改下面的 YOUR_USERNAME 為你的使用者名稱
+  2. 複製到 ~/Library/LaunchAgents/
+     cp ptt-ntfy.plist ~/Library/LaunchAgents/com.ptt-ntfy.plist
+  3. 載入服務
+     launchctl load ~/Library/LaunchAgents/com.ptt-ntfy.plist
+  4. 啟動服務
+     launchctl start com.ptt-ntfy
+
+停止服務：
+  launchctl stop com.ptt-ntfy
+
+卸載服務：
+  launchctl unload ~/Library/LaunchAgents/com.ptt-ntfy.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.ptt-ntfy</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/YOUR_USERNAME/ptt_ntfy/venv/bin/python</string>
+        <string>/Users/YOUR_USERNAME/ptt_ntfy/main.py</string>
+    </array>
+    
+    <key>WorkingDirectory</key>
+    <string>/Users/YOUR_USERNAME/ptt_ntfy</string>
+    
+    <key>RunAtLoad</key>
+    <true/>
+    
+    <key>KeepAlive</key>
+    <true/>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/YOUR_USERNAME/ptt_ntfy/logs/stdout.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/YOUR_USERNAME/ptt_ntfy/logs/stderr.log</string>
+</dict>
+</plist>

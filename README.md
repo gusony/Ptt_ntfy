@@ -1,0 +1,418 @@
+# PTT 爬蟲通知程式
+
+一個可以監控 PTT 看板並透過 Telegram 發送通知的程式。
+
+支援 **Linux (Ubuntu/Mint)**、**macOS**、**Windows** 系統。
+
+---
+
+## 目錄
+
+- [功能特色](#功能特色)
+- [系統需求](#系統需求)
+- [快速開始](#快速開始)
+- [詳細安裝步驟](#詳細安裝步驟)
+- [設定 Telegram Bot](#設定-telegram-bot)
+- [測試程式](#測試程式)
+- [啟動服務](#啟動服務)
+- [開機自動啟動](#開機自動啟動)
+- [Telegram 指令說明](#telegram-指令說明)
+- [目錄結構](#目錄結構)
+- [常見問題](#常見問題)
+
+---
+
+## 功能特色
+
+| 功能 | 說明 |
+|------|------|
+| 📊 **推文數監控** | 當文章推文數超過設定門檻時通知 |
+| 👎 **噓文數監控** | 當文章噓文數超過設定門檻時通知 |
+| 👤 **作者監控** | 當特定作者發文時通知 |
+| 🔍 **關鍵字監控** | 當標題出現特定關鍵字時通知 |
+| 💾 **設定持久化** | 使用 SQLite 儲存設定，重啟後保留 |
+| ⏰ **可調整間隔** | 預設每 10 分鐘爬取一次，可自訂 |
+| 🔄 **增量爬取** | 只爬取新文章，不重複通知 |
+
+---
+
+## 系統需求
+
+- **Python**: 3.8 或更新版本
+- **作業系統**: Linux (Ubuntu/Mint)、macOS、Windows
+- **網路**: 可連線到 PTT 和 Telegram
+
+---
+
+## 快速開始
+
+```bash
+# 1. 複製專案
+git clone <your-repo-url> ptt_ntfy
+cd ptt_ntfy
+
+# 2. 檢查環境
+python check_env.py
+
+# 3. 安裝依賴
+pip install -r requirements.txt
+
+# 4. 設定 Telegram (編輯 config.py)
+# 5. 啟動
+python main.py
+```
+
+---
+
+## 詳細安裝步驟
+
+### Linux (Ubuntu/Mint)
+
+```bash
+# 1. 安裝 Python (如果還沒有)
+sudo apt update
+sudo apt install python3 python3-pip python3-venv
+
+# 2. 複製專案
+cd ~
+git clone <your-repo-url> ptt_ntfy
+cd ptt_ntfy
+
+# 3. 執行安裝腳本
+chmod +x scripts/install.sh
+./scripts/install.sh
+
+# 4. 啟動虛擬環境
+source venv/bin/activate
+
+# 5. 設定 Telegram (見下一節)
+
+# 6. 檢查環境
+python check_env.py
+```
+
+### macOS
+
+```bash
+# 1. 安裝 Python (使用 Homebrew)
+brew install python3
+
+# 2. 複製專案
+cd ~
+git clone <your-repo-url> ptt_ntfy
+cd ptt_ntfy
+
+# 3. 執行安裝腳本
+chmod +x scripts/install.sh
+./scripts/install.sh
+
+# 4. 啟動虛擬環境
+source venv/bin/activate
+
+# 5. 設定 Telegram (見下一節)
+
+# 6. 檢查環境
+python check_env.py
+```
+
+### Windows
+
+```powershell
+# 1. 安裝 Python (從 https://www.python.org/downloads/ 下載)
+#    安裝時記得勾選「Add Python to PATH」
+
+# 2. 複製專案 (或下載 ZIP 解壓縮)
+cd D:\git
+git clone <your-repo-url> ptt_ntfy
+cd ptt_ntfy
+
+# 3. 執行安裝腳本
+powershell -ExecutionPolicy Bypass -File scripts\install.ps1
+
+# 4. 啟動虛擬環境
+.\venv\Scripts\Activate.ps1
+
+# 5. 設定 Telegram (見下一節)
+
+# 6. 檢查環境
+python check_env.py
+```
+
+---
+
+## 設定 Telegram Bot
+
+### 步驟 1: 建立 Bot
+
+1. 在 Telegram 中搜尋 **@BotFather**
+2. 發送 `/newbot`
+3. 依照指示設定 Bot 名稱和 username
+4. 取得 **Bot Token** (格式: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+
+### 步驟 2: 取得 Chat ID
+
+1. 在 Telegram 中找到你剛建立的 Bot，發送任意訊息
+2. 在瀏覽器開啟:
+   ```
+   https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates
+   ```
+3. 找到 `"chat":{"id": 123456789}` 中的數字，這就是你的 **Chat ID**
+
+### 步驟 3: 設定 config.py
+
+編輯 `config.py`，填入你的 Token 和 Chat ID:
+
+```python
+TELEGRAM_BOT_TOKEN = "你的Bot Token"
+TELEGRAM_CHAT_ID = "你的Chat ID"
+```
+
+或使用環境變數:
+
+```bash
+# Linux/macOS
+export TELEGRAM_BOT_TOKEN="你的Bot Token"
+export TELEGRAM_CHAT_ID="你的Chat ID"
+
+# Windows PowerShell
+$env:TELEGRAM_BOT_TOKEN = "你的Bot Token"
+$env:TELEGRAM_CHAT_ID = "你的Chat ID"
+```
+
+---
+
+## 測試程式
+
+### 1. 環境檢查
+
+```bash
+python check_env.py
+```
+
+這會檢查:
+- ✓ 作業系統
+- ✓ Python 版本
+- ✓ 依賴套件
+- ✓ 設定檔
+- ✓ 網路連線
+
+### 2. 爬蟲測試 (不需要 Telegram)
+
+```bash
+# 測試 Stock 看板，找推文數 >= 20 的文章
+python test_crawler.py
+
+# 測試其他看板
+python test_crawler.py Gossiping 50
+python test_crawler.py NBA 30
+```
+
+### 3. Telegram 測試
+
+```bash
+python test_telegram.py
+```
+
+你應該會在 Telegram 收到 3 則測試訊息。
+
+---
+
+## 啟動服務
+
+### 前景執行
+
+```bash
+python main.py
+```
+
+### 背景執行
+
+```bash
+# Linux/macOS
+nohup python main.py > logs/output.log 2>&1 &
+
+# Windows PowerShell
+Start-Process python -ArgumentList "main.py" -WindowStyle Hidden
+```
+
+啟動後，你可以在 Telegram 中對 Bot 發送 `/start` 開始使用。
+
+---
+
+## 開機自動啟動
+
+執行自動設定腳本:
+
+```bash
+python scripts/setup_autostart.py
+```
+
+腳本會根據你的作業系統提供對應的設定指示。
+
+### Linux (systemd)
+
+```bash
+# 複製服務檔案
+sudo cp /tmp/ptt-ntfy.service /etc/systemd/system/
+
+# 重新載入 systemd
+sudo systemctl daemon-reload
+
+# 啟用開機自動啟動
+sudo systemctl enable ptt-ntfy
+
+# 啟動服務
+sudo systemctl start ptt-ntfy
+
+# 查看狀態
+sudo systemctl status ptt-ntfy
+
+# 查看日誌
+sudo journalctl -u ptt-ntfy -f
+```
+
+### macOS (launchd)
+
+```bash
+# 載入服務
+launchctl load ~/Library/LaunchAgents/com.ptt-ntfy.plist
+
+# 啟動服務
+launchctl start com.ptt-ntfy
+
+# 查看狀態
+launchctl list | grep ptt-ntfy
+
+# 查看日誌
+tail -f ~/ptt_ntfy/logs/stdout.log
+```
+
+### Windows (工作排程器)
+
+1. 開啟「工作排程器」(Task Scheduler)
+2. 點擊「建立基本工作」
+3. 名稱: `PTT Notifier`
+4. 觸發程序: 「當使用者登入時」
+5. 動作: 「啟動程式」
+6. 程式: 選擇專案目錄下的 `start_ptt_ntfy_hidden.vbs`
+7. 完成
+
+---
+
+## Telegram 指令說明
+
+| 指令 | 說明 | 範例 |
+|------|------|------|
+| `/start` | 顯示說明 | `/start` |
+| `/help` | 顯示說明 | `/help` |
+| `/add_push [看板] [推文數]` | 新增推文數監控 | `/add_push Stock 20` |
+| `/add_boo [看板] [噓文數]` | 新增噓文數監控 | `/add_boo Gossiping 50` |
+| `/add_author [看板] [作者]` | 新增作者監控 | `/add_author Stock abc123` |
+| `/add_keyword [看板] [關鍵字]` | 新增關鍵字監控 | `/add_keyword Stock 台積電` |
+| `/list` | 列出所有監控規則 | `/list` |
+| `/delete [規則ID]` | 刪除監控規則 | `/delete 1` |
+| `/pause [規則ID]` | 暫停監控規則 | `/pause 1` |
+| `/resume [規則ID]` | 恢復監控規則 | `/resume 1` |
+| `/interval [分鐘]` | 設定爬取間隔 | `/interval 5` |
+| `/status` | 查看系統狀態 | `/status` |
+
+### 通知格式範例
+
+```
+[Stock] 新聞標題 (推: 25)
+https://www.ptt.cc/bbs/Stock/M.1234567890.A.ABC.html
+```
+
+---
+
+## 目錄結構
+
+```
+ptt_ntfy/
+├── main.py                 # 主程式入口
+├── config.py               # 設定檔
+├── requirements.txt        # 依賴套件
+├── check_env.py            # 環境檢查腳本
+├── test_crawler.py         # 爬蟲測試腳本
+├── test_telegram.py        # Telegram 測試腳本
+├── ptt_ntfy.db            # SQLite 資料庫 (自動產生)
+├── README.md               # 本文件
+│
+├── database/
+│   ├── __init__.py
+│   └── models.py           # 資料庫模型
+│
+├── crawler/
+│   ├── __init__.py
+│   └── ptt_crawler.py      # PTT 爬蟲
+│
+├── notifier/
+│   ├── __init__.py
+│   └── telegram_bot.py     # Telegram 通知
+│
+├── scheduler/
+│   ├── __init__.py
+│   └── scheduler.py        # 定時排程
+│
+├── scripts/
+│   ├── install.sh          # Linux/macOS 安裝腳本
+│   ├── install.ps1         # Windows 安裝腳本
+│   ├── setup_autostart.py  # 自動啟動設定腳本
+│   ├── ptt-ntfy.service    # Linux systemd 服務檔
+│   └── ptt-ntfy.plist      # macOS launchd 設定檔
+│
+└── logs/                   # 日誌目錄 (自動產生)
+```
+
+---
+
+## 常見問題
+
+### Q: 爬蟲連線失敗?
+
+A: PTT 有時會限制連線。程式內建重試機制，如果持續失敗:
+- 檢查網路連線
+- 稍後再試
+- 確認 PTT 沒有維護中
+
+### Q: 收不到 Telegram 通知?
+
+A: 
+1. 確認 Bot Token 和 Chat ID 正確
+2. 確認你有對 Bot 發送過訊息 (啟動對話)
+3. 執行 `python test_telegram.py` 測試
+
+### Q: 如何備份設定?
+
+A: 只需備份以下檔案:
+- `config.py` - 設定檔
+- `ptt_ntfy.db` - 資料庫 (含所有監控規則)
+
+### Q: 如何更新程式?
+
+A:
+```bash
+cd ptt_ntfy
+git pull
+pip install -r requirements.txt
+# 重新啟動服務
+```
+
+### Q: 如何停止服務?
+
+A:
+```bash
+# Linux
+sudo systemctl stop ptt-ntfy
+
+# macOS
+launchctl stop com.ptt-ntfy
+
+# Windows - 在工作管理員中結束 python.exe
+```
+
+---
+
+## License
+
+MIT License

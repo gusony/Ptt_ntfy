@@ -1,0 +1,31 @@
+# PTT 爬蟲通知程式 - systemd 服務檔案
+# 複製到 /etc/systemd/system/ptt-ntfy.service
+# 
+# 使用方式：
+#   sudo cp ptt-ntfy.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable ptt-ntfy
+#   sudo systemctl start ptt-ntfy
+
+[Unit]
+Description=PTT Crawler Notification Service
+After=network.target
+
+[Service]
+Type=simple
+User=YOUR_USERNAME
+WorkingDirectory=/home/YOUR_USERNAME/ptt_ntfy
+ExecStart=/home/YOUR_USERNAME/ptt_ntfy/venv/bin/python main.py
+Restart=always
+RestartSec=10
+
+# 環境變數 (可選，也可以直接寫在 config.py)
+# Environment="TELEGRAM_BOT_TOKEN=your_token_here"
+# Environment="TELEGRAM_CHAT_ID=your_chat_id_here"
+
+# 日誌
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
