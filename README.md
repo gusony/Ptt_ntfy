@@ -247,12 +247,83 @@ python main.py
 
 ### 背景執行
 
+#### Linux/macOS
+
 ```bash
-# Linux/macOS
+# 方法 1: 使用 nohup（推薦）
 nohup python main.py > logs/output.log 2>&1 &
 
-# Windows PowerShell
+# 方法 2: 使用 screen（適合長時間執行）
+screen -S ptt_ntfy
+python main.py
+# 按 Ctrl+A 然後 D 來 detach
+
+# 方法 3: 使用 tmux（適合長時間執行）
+tmux new -s ptt_ntfy
+python main.py
+# 按 Ctrl+B 然後 D 來 detach
+```
+
+#### Windows
+
+```powershell
+# 方法 1: 使用 Start-Process（推薦）
 Start-Process python -ArgumentList "main.py" -WindowStyle Hidden
+
+# 方法 2: 使用 PowerShell 背景工作
+Start-Job -ScriptBlock { python main.py }
+```
+
+### 手動啟動（每次開機後）
+
+如果你沒有設定開機自動啟動，每次開機後需要手動啟動程式：
+
+#### Linux/macOS
+
+```bash
+# 進入專案目錄
+cd ~/ptt_ntfy  # 或你的專案路徑
+
+# 背景執行（推薦）
+nohup python main.py > logs/output.log 2>&1 &
+
+# 或前景執行（可以看到即時輸出）
+python main.py
+```
+
+#### Windows
+
+```powershell
+# 進入專案目錄
+cd D:\git\ptt_ntfy  # 或你的專案路徑
+
+# 背景執行（推薦）
+Start-Process python -ArgumentList "main.py" -WindowStyle Hidden
+
+# 或前景執行（可以看到即時輸出）
+python main.py
+```
+
+### 檢查程式是否在執行
+
+#### Linux/macOS
+
+```bash
+# 查看程序
+ps aux | grep main.py
+
+# 查看日誌
+tail -f logs/output.log
+```
+
+#### Windows
+
+```powershell
+# 查看程序
+Get-Process python
+
+# 查看日誌（如果有的話）
+Get-Content logs\output.log -Tail 50
 ```
 
 啟動後，你可以在 Telegram 中對 Bot 發送 `/start` 開始使用。

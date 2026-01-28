@@ -375,9 +375,6 @@ def main():
     print(f"""
 {Colors.GREEN}恭喜！設定已完成。{Colors.ENDC}
 
-{Colors.BOLD}啟動程式：{Colors.ENDC}
-  python main.py
-
 {Colors.BOLD}Telegram 指令：{Colors.ENDC}
   /start          - 查看使用說明
   /add_push Stock 20  - 監控 Stock 板推文數 >= 20
@@ -389,15 +386,60 @@ def main():
   python check_env.py  - 檢查環境
   python test_crawler.py  - 測試爬蟲
 
-{Colors.BOLD}設定開機自動啟動：{Colors.ENDC}
-  python scripts/setup_autostart.py
-
 {Colors.BOLD}更多說明請參考 README.md{Colors.ENDC}
 """)
     
-    if ask_yes_no("是否現在啟動程式？"):
-        print_info("正在啟動...")
-        os.system(f"{sys.executable} main.py")
+    # 詢問是否設定開機自動啟動
+    if ask_yes_no("是否要設定開機自動啟動？", default=False):
+        print_info("正在設定開機自動啟動...")
+        try:
+            autostart_script = Path(__file__).parent / "scripts" / "setup_autostart.py"
+            if autostart_script.exists():
+                subprocess.run([sys.executable, str(autostart_script)], check=False)
+            else:
+                print_warning("找不到 setup_autostart.py，請手動執行: python scripts/setup_autostart.py")
+        except Exception as e:
+            print_error(f"設定開機啟動時發生錯誤: {e}")
+            print_info("請手動執行: python scripts/setup_autostart.py")
+    
+    # 詢問是否要在背景啟動程式
+    if ask_yes_no("是否要在背景啟動程式？", default=True):
+        print_info("正在背景啟動程式...")
+        try:
+            project_dir = Path(__file__).parent
+            main_py = project_dir / "main.py"
+            
+            if platform.system() == "Windows":
+                # Windows: 使用 Start-Process 在背景執行
+                subprocess.Popen(
+                    [sys.executable, str(main_py)],
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                    cwd=str(project_dir)
+                )
+                print_success("程式已在背景啟動（Windows）")
+            else:
+                # Linux/macOS: 使用 nohup 在背景執行
+                logs_dir = project_dir / "logs"
+                logs_dir.mkdir(exist_ok=True)
+                log_file = logs_dir / "output.log"
+                
+                with open(log_file, "a") as f:
+                    process = subprocess.Popen(
+                        [sys.executable, str(main_py)],
+                        stdout=f,
+                        stderr=subprocess.STDOUT,
+                        cwd=str(project_dir),
+                        start_new_session=True
+                    )
+                
+                print_success(f"程式已在背景啟動（PID: {process.pid}）")
+                print_info(f"日誌檔案: {log_file}")
+                print_info("查看日誌: tail -f logs/output.log")
+        except Exception as e:
+            print_error(f"啟動程式時發生錯誤: {e}")
+            print_info("請手動執行: python main.py")
+    else:
+        print_info("你可以稍後手動執行: python main.py")
 
 
 if __name__ == "__main__":
