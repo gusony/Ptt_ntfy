@@ -17,6 +17,7 @@ from database import init_db
 from notifier import TelegramNotifier
 from scheduler import PTTScheduler
 from config import TELEGRAM_BOT_TOKEN
+from utils.logger import setup_logger, close_logger
 
 # PID 檔案路徑
 PID_FILE = Path(__file__).parent / "ptt_ntfy.pid"
@@ -122,6 +123,10 @@ def ensure_single_instance():
 
 async def main():
     """主程式"""
+    # 初始化日志系统（按日期创建日志文件，自动添加时间戳）
+    project_root = Path(__file__).parent
+    setup_logger(log_dir=project_root / "logs", log_prefix="ptt_ntfy", retention_days=14)
+    
     print("=" * 50)
     print("PTT 爬蟲通知程式")
     print("=" * 50)
@@ -187,6 +192,9 @@ async def main():
         await application.shutdown()
         remove_pid_file()
         print("[OK] 程式已關閉")
+        
+        # 关闭日志系统
+        close_logger()
 
 
 if __name__ == "__main__":
@@ -195,4 +203,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"[ERROR] 程式異常終止: {e}")
         remove_pid_file()
+        close_logger()
         sys.exit(1)

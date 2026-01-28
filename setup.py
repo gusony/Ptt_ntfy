@@ -8,6 +8,7 @@ import os
 import subprocess
 import platform
 from pathlib import Path
+from datetime import datetime
 
 # 顏色輸出 (支援 Windows 10+)
 if platform.system() == "Windows":
@@ -419,22 +420,23 @@ def main():
                 print_success("程式已在背景啟動（Windows）")
             else:
                 # Linux/macOS: 使用 nohup 在背景執行
-                logs_dir = project_dir / "logs"
-                logs_dir.mkdir(exist_ok=True)
-                log_file = logs_dir / "output.log"
+                # 注意：日志系统会自动按日期创建日志文件（ptt_ntfy-YYYY-MM-DD.log）
+                # 并自动添加时间戳，所以不需要重定向 stdout/stderr
+                process = subprocess.Popen(
+                    [sys.executable, str(main_py)],
+                    cwd=str(project_dir),
+                    start_new_session=True
+                )
                 
-                with open(log_file, "a") as f:
-                    process = subprocess.Popen(
-                        [sys.executable, str(main_py)],
-                        stdout=f,
-                        stderr=subprocess.STDOUT,
-                        cwd=str(project_dir),
-                        start_new_session=True
-                    )
+                logs_dir = project_dir / "logs"
+                today = datetime.now().strftime("%Y-%m-%d")
+                log_file = logs_dir / f"ptt_ntfy-{today}.log"
                 
                 print_success(f"程式已在背景啟動（PID: {process.pid}）")
-                print_info(f"日誌檔案: {log_file}")
-                print_info("查看日誌: tail -f logs/output.log")
+                print_info(f"日誌目錄: {logs_dir}")
+                print_info(f"今日日誌: {log_file.name}")
+                print_info(f"查看日誌: tail -f {log_file}")
+                print_info("提示: 日誌會自動按日期分割，超過14天的日誌會自動刪除")
         except Exception as e:
             print_error(f"啟動程式時發生錯誤: {e}")
             print_info("請手動執行: python main.py")

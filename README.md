@@ -251,7 +251,8 @@ python main.py
 
 ```bash
 # 方法 1: 使用 nohup（推薦）
-nohup python main.py > logs/output.log 2>&1 &
+# 注意：程式會自動將日誌寫入 logs/ptt_ntfy-YYYY-MM-DD.log，無需手動重定向
+nohup python main.py > /dev/null 2>&1 &
 
 # 方法 2: 使用 screen（適合長時間執行）
 screen -S ptt_ntfy
@@ -285,7 +286,8 @@ Start-Job -ScriptBlock { python main.py }
 cd ~/ptt_ntfy  # 或你的專案路徑
 
 # 背景執行（推薦）
-nohup python main.py > logs/output.log 2>&1 &
+# 注意：程式會自動將日誌寫入 logs/ptt_ntfy-YYYY-MM-DD.log
+nohup python main.py > /dev/null 2>&1 &
 
 # 或前景執行（可以看到即時輸出）
 python main.py
@@ -312,8 +314,11 @@ python main.py
 # 查看程序
 ps aux | grep main.py
 
-# 查看日誌
-tail -f logs/output.log
+# 查看今日日誌（日誌會自動按日期分割）
+tail -f logs/ptt_ntfy-$(date +%Y-%m-%d).log
+
+# 或查看最新的日誌文件
+ls -lt logs/ptt_ntfy-*.log | head -1 | awk '{print $NF}' | xargs tail -f
 ```
 
 #### Windows
@@ -322,9 +327,21 @@ tail -f logs/output.log
 # 查看程序
 Get-Process python
 
-# 查看日誌（如果有的話）
-Get-Content logs\output.log -Tail 50
+# 查看今日日誌（日誌會自動按日期分割）
+$today = Get-Date -Format "yyyy-MM-dd"
+Get-Content "logs\ptt_ntfy-$today.log" -Tail 50 -Wait
 ```
+
+### 日誌系統說明
+
+程式使用自動日誌系統，具有以下特性：
+
+- **按日期分割**：每天自動創建新的日誌文件，格式為 `ptt_ntfy-YYYY-MM-DD.log`
+- **時間戳**：每行日誌自動添加時間戳（精確到秒），格式為 `[YYYY-MM-DD HH:MM:SS]`
+- **自動清理**：超過 14 天的日誌文件會自動刪除（每天檢查一次）
+- **背景執行友好**：即使背景執行，所有輸出都會記錄到日誌文件
+
+日誌文件位置：`logs/ptt_ntfy-YYYY-MM-DD.log`
 
 啟動後，你可以在 Telegram 中對 Bot 發送 `/start` 開始使用。
 
