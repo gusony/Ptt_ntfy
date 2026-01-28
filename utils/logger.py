@@ -158,19 +158,29 @@ class TimestampedFileWriter:
 class TimestampedStream:
     """带时间戳的流包装器，拦截 stdout/stderr"""
     
-    def __init__(self, original_stream, file_writer: TimestampedFileWriter):
+    def __init__(self, original_stream, file_writer: TimestampedFileWriter, output_to_terminal: bool = True):
         self.original_stream = original_stream
         self.file_writer = file_writer
+        self.output_to_terminal = output_to_terminal
         self.buffer = ""  # 用于缓冲多行消息
+    
+    def _is_terminal_connected(self) -> bool:
+        """检查是否连接到终端"""
+        try:
+            # 检查 stdout 是否连接到终端
+            return self.original_stream.isatty() if hasattr(self.original_stream, 'isatty') else False
+        except Exception:
+            return False
     
     def write(self, message: str):
         """写入消息到原始流和日志文件"""
-        # 写入到原始流（保持终端输出）
-        try:
-            self.original_stream.write(message)
-            self.original_stream.flush()
-        except Exception:
-            pass
+        # 只有在 output_to_terminal=True 且连接到终端时才输出到终端
+        if self.output_to_terminal and self._is_terminal_connected():
+            try:
+                self.original_stream.write(message)
+                self.original_stream.flush()
+            except Exception:
+                pass
         
         # 缓冲消息，按行处理
         self.buffer += message
@@ -184,14 +194,15 @@ class TimestampedStream:
     
     def flush(self):
         """刷新流"""
-        try:
-            self.original_stream.flush()
-            # 刷新缓冲区中剩余的内容
-            if self.buffer.strip():
-                self.file_writer.write(self.buffer, skip_timestamp=False)
-                self.buffer = ""
-        except Exception:
-            pass
+        if self.output_to_terminal and self._is_terminal_connected():
+            try:
+                self.original_stream.flush()
+            except Exception:
+                pass
+        # 刷新缓冲区中剩余的内容
+        if self.buffer.strip():
+            self.file_writer.write(self.buffer, skip_timestamp=False)
+            self.buffer = ""
     
     def __getattr__(self, name):
         """代理其他属性到原始流"""
@@ -202,7 +213,7 @@ class TimestampedStream:
 _log_writer: Optional[TimestampedFileWriter] = None
 
 
-def setup_logger(log_dir: Optional[Path] = None, log_prefix: str = "app", retention_days: int = 14):
+def setup_logger(log_dir: Optional[Path] = None, log_prefix: str = "app", retention_days: int = 14, output_to_terminal: Optional[bool] = None):
     """
     设置日志系统
     
@@ -210,6 +221,7 @@ def setup_logger(log_dir: Optional[Path] = None, log_prefix: str = "app", retent
         log_dir: 日志目录，如果为 None 则使用项目根目录下的 logs 目录
         log_prefix: 日志文件前缀
         retention_days: 保留日志的天数
+        output_to_terminal: 是否输出到终端。如果为 None，则自动检测（连接到终端时输出，否则不输出）
     """
     global _log_writer
     
@@ -226,9 +238,17 @@ def setup_logger(log_dir: Optional[Path] = None, log_prefix: str = "app", retent
     # 创建日志写入器
     _log_writer = TimestampedFileWriter(log_dir, log_prefix, retention_days)
     
+    # 如果 output_to_terminal 为 None，自动检测是否连接到终端
+    if output_to_terminal is None:
+        try:
+            # 检查 stdout 是否连接到终端
+            output_to_terminal = sys.stdout.isatty() if hasattr(sys.stdout, 'isatty') else False
+        except Exception:
+            output_to_terminal = False
+    
     # 包装 stdout 和 stderr
-    sys.stdout = TimestampedStream(sys.stdout, _log_writer)
-    sys.stderr = TimestampedStream(sys.stderr, _log_writer)
+    sys.stdout = TimestampedStream(sys.stdout, _log_writer, output_to_terminal)
+    sys.stderr = TimestampedStream(sys.stderr, _log_writer, output_to_terminal)
     
     return _log_writer
 

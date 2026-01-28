@@ -7,6 +7,8 @@ import os
 import io
 import signal
 import platform
+import subprocess
+import time
 from pathlib import Path
 
 # 設定 stdout 編碼為 UTF-8 (解決 Windows 終端編碼問題)
@@ -43,7 +45,6 @@ def is_process_running(pid: int) -> bool:
     try:
         if platform.system() == "Windows":
             # Windows: 使用 tasklist 檢查
-            import subprocess
             result = subprocess.run(
                 ["tasklist", "/FI", f"PID eq {pid}"],
                 capture_output=True,
@@ -65,13 +66,11 @@ def kill_process(pid: int) -> bool:
     
     try:
         if platform.system() == "Windows":
-            import subprocess
             subprocess.run(["taskkill", "/F", "/PID", str(pid)], 
                           capture_output=True)
         else:
             os.kill(pid, signal.SIGTERM)
             # 等待一下讓程序有時間清理
-            import time
             time.sleep(1)
             # 如果還在執行，強制終止
             if is_process_running(pid):
@@ -96,26 +95,7 @@ def remove_pid_file():
 
 
 def ensure_single_instance():
-    """確保只有一個程式實例在執行"""
-    print("\n檢查是否有其他實例正在執行...")
-    
-    old_pid = get_running_pid()
-    
-    if old_pid and is_process_running(old_pid):
-        print(f"[!] 發現舊的程式實例 (PID: {old_pid})")
-        print(f"[!] 正在終止舊程式...")
-        
-        if kill_process(old_pid):
-            print(f"[OK] 已終止舊程式 (PID: {old_pid})")
-            # 等待一下確保程序完全終止
-            import time
-            time.sleep(2)
-        else:
-            print(f"[!] 無法終止舊程式，請手動終止 PID: {old_pid}")
-            sys.exit(1)
-    else:
-        print("[OK] 沒有其他實例正在執行")
-    
+    """確保只有一個程式實例在執行（寫入當前 PID）"""
     # 寫入新的 PID
     write_pid_file()
     print(f"[OK] 當前程式 PID: {os.getpid()}")
@@ -123,15 +103,29 @@ def ensure_single_instance():
 
 async def main():
     """主程式"""
+    # 先檢查是否有舊實例（在日誌系統初始化之前）
+    # 這樣可以確保即使日誌系統不輸出到終端，檢查消息也能顯示
+    old_pid = get_running_pid()
+    if old_pid and is_process_running(old_pid):
+        print(f"\n[!] 發現舊的程式實例 (PID: {old_pid})")
+        print(f"[!] 正在終止舊程式...")
+        if kill_process(old_pid):
+            print(f"[OK] 已終止舊程式 (PID: {old_pid})")
+            time.sleep(2)  # 等待一下確保程序完全終止
+        else:
+            print(f"[!] 無法終止舊程式，請手動終止 PID: {old_pid}")
+            sys.exit(1)
+    
     # 初始化日志系统（按日期创建日志文件，自动添加时间戳）
+    # output_to_terminal=None 會自動檢測：如果連接到終端則輸出，否則不輸出
     project_root = Path(__file__).parent
-    setup_logger(log_dir=project_root / "logs", log_prefix="ptt_ntfy", retention_days=14)
+    setup_logger(log_dir=project_root / "logs", log_prefix="ptt_ntfy", retention_days=14, output_to_terminal=None)
     
     print("=" * 50)
     print("PTT 爬蟲通知程式")
     print("=" * 50)
     
-    # 確保單一實例
+    # 確保單一實例（寫入新的 PID）
     ensure_single_instance()
     
     # 檢查設定
